@@ -1,11 +1,10 @@
-version: '3.8'
 
 services:
   postgres:
     image: postgres:15-alpine
     container_name: payment-postgres
     environment:
-      POSTGRES_DB: merchant_db
+      POSTGRES_DB: merchant_db  # default db, others created by init script
       POSTGRES_USER: payment_user
       POSTGRES_PASSWORD: payment_pass
     ports:
@@ -57,8 +56,8 @@ services:
 
   merchant-service:
     build:
-      context: ./merchant-service
-      dockerfile: Dockerfile
+      context: .                              # ← root
+      dockerfile: merchant-service/Dockerfile
     container_name: merchant-service
     ports:
       - "8081:8081"
@@ -75,6 +74,30 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+  payment-service:
+    build:
+      context: .                              # ← root
+      dockerfile: payment-service/Dockerfile
+    container_name: payment-service
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/payment_db
+      SPRING_DATASOURCE_USERNAME: payment_user
+      SPRING_DATASOURCE_PASSWORD: payment_pass
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      JWT_SECRET: mySecretKeyForJWTTokenGenerationThatIsLongEnough256Bits
+      JWT_EXPIRATION: 86400000
+      IDEMPOTENCY_TTL_HOURS: 24
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_started
 
 volumes:
   postgres_data:

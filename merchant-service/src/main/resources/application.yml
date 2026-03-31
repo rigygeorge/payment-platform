@@ -30,6 +30,8 @@ spring:
       write-dates-as-timestamps: false
     deserialization:
       fail-on-unknown-properties: false
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
 
 jwt:
   secret: mySecretKeyForJWTTokenGenerationThatIsLongEnough256Bits
